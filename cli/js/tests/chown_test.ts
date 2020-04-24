@@ -104,6 +104,26 @@ if (Deno.build.os !== "win") {
   );
 
   unitTest(
+    { perms: { write: true } },
+    async function chownSyncSucceedWhenOwnerChange(): Promise<void> {
+      // The test script has no such priviledge, so need to find a better way to test this case
+      const { uid, gid } = await getUidAndGid();
+
+      const enc = new TextEncoder();
+      const dirPath = Deno.makeTempDirSync();
+      const filePath = dirPath + "/chown_test_file.txt";
+      const fileData = enc.encode("Hello");
+      Deno.writeFileSync(filePath, fileData);
+
+      // the test script creates this file with the same uid and gid,
+      // here chown is a noop so it succeeds under non-priviledged user
+      Deno.chownSync(filePath, uid, gid);
+
+      Deno.removeSync(dirPath, { recursive: true });
+    }
+  )
+
+  unitTest(
     { perms: { run: true, write: true } },
     async function chownSyncSucceed(): Promise<void> {
       // TODO: when a file's owner is actually being changed,
